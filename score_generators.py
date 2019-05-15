@@ -11,7 +11,7 @@ to run this code, you need to provide k range, user list, and similarity functio
 """
 import os
 import pandas as pd
-from numpy import load
+import numpy as np
 from scipy.stats import pearsonr, kendalltau
 from scipy.spatial.distance import euclidean, cosine, correlation
 from sklearn.metrics import jaccard_similarity_score
@@ -111,7 +111,7 @@ def get_user_CF_weights(nearest_nb, initial_nb, sim_dict, user_song_list,
         return song_candidates, song_candidate_list
 
 
-def get_content_weights(song_candidate_list, user_song_list, sim):
+def get_content_weights(song_candidate_list, user_song_list):
     """
     song_candidate_list is the union of songs for all nearest neighbors
     [song_id, song_id, ...]
@@ -130,14 +130,29 @@ def get_content_weights(song_candidate_list, user_song_list, sim):
     {song_id:weight, song_id:weight, ...}
     
     similarity function: Jaccard
+    
     """
 
     song_rank_CT = {}
-    for song in song_candidate_list:
-        x = 0
-        for u_song in user_song_list:
-            x += sim[song][u_song]
-        song_rank_CT[song] = x
+            
+    sim = np.zeros((len(song_candidate_list), len(user_song_list))) + 677
+    song_list = list(set(song_candidate_list + user_song_list))
+    
+    while np.any(sim==677):
+        song = np.array(song_list).min()
+        a = np.load('./raw_feature/item_sim/item_jaccard_sim_{}.npy'.format(song))
+        if song in song_candidate_list:
+            for i in range(len(user_song_list)):
+                sim[song_candidate_list.index(song)][i] = a[0][user_song_list[i] - song]
+        
+        if song in user_song_list:
+            for j in range(len(song_candidate_list)):
+                sim[j][user_song_list.index(song)] = a[0][song_candidate_list[j] - song]
+                
+        song_list.remove(song)
+        
+    for k in range(len(song_candidate_list)):
+        song_rank_CT[song_candidate_list[k]] = sim[k].sum()
         
     return song_rank_CT
 

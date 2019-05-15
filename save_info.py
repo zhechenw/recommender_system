@@ -1,6 +1,7 @@
 import os, math
 import numpy as np
 import pandas as pd
+import scipy.sparse
 from load_data import *
 from sklearn.metrics import jaccard_similarity_score
 
@@ -167,19 +168,22 @@ def item_similarity_matrix(path='./dataset/song-attributes.txt'):
     this code calculate and save item similarity matrix using jaccard similarity
     """
     ct = load_content_info(path=path)
-    item_list = list(ct.index)
-    sim = np.zeros((len(item_list), len(item_list)))
-    for i in range(len(item_list)):
+    n = len(ct)
+    for i in range(n):
+        sim = np.zeros((1, n-i))
+        sim[0][0] = 1
         f1 = list(ct.loc[i])
-        sim[i][i] = 1
-        for j in range(i+1, len(item_list)):
+        for j in range(1, n-i):
             f2 = list(ct.loc[j])
-            sim[i][j] = jaccard_similarity_score(f1, f2)
-    np.save('./raw_feature/item_jaccard_sim.npy', sim)
+            sim[0][j] = jaccard_similarity_score(f1, f2)
+            print('i = {}/{}, j = {}/{}'.format(i+1, n, j+1, n-i))
+        np.save('./raw_feature/item_sim/item_jaccard_sim_{}'.format(i), sim)
+        
+    
     
 # this is the main part
 # choose to save info or fitted data
-dataset = './dataset/yahoo_r2/train_0.txt'
+#dataset = './dataset/yahoo_r2/train_0.txt'
 
 #df = load_dataset(dataset)
 
