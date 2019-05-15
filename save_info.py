@@ -1,7 +1,8 @@
 import os, math
 import numpy as np
 import pandas as pd
-from preprocessing import load_dataset
+from load_data import *
+from sklearn.metrics import jaccard_similarity_score
 
 
 def get_item_info(df, dataset='train_0'):
@@ -70,8 +71,8 @@ def get_user_info(df, dataset='train_0', user=None):
 def get_fitted_dataset(df, dataset='train_0', user=None):
     """
     this code take fit user rating by using zscore
-    it can be applied to a single certain user
-    or to all users in a given dataset and save result as a csv file
+    it can be applied to a single certain user (user=user_id)
+    or to all users in a given dataset and save result as a csv file (user=None)
 
     :param df:
     :param dataset:
@@ -116,7 +117,10 @@ def get_fitted_dataset(df, dataset='train_0', user=None):
 
 
 def fix_fitted_dataset(df, dataset='train_0'):
-
+    """
+    this code find users whoese fitted rating is NA (std = 0) and re-standardize
+    using mean and std of the whole training set
+    """
     df = df.set_index('user_id')
     avg = df['rating'].mean()
     std = df['rating'].std()
@@ -142,7 +146,9 @@ def fix_fitted_dataset(df, dataset='train_0'):
 
 
 def concat_fitted_dataset(dataset='train_0'):
-
+    """
+    this code combined split training set into one whole training set
+    """
     output = './dataset/yahoo_r2_zscored/{}/'.format(dataset)
     df = pd.DataFrame()
 
@@ -155,11 +161,27 @@ def concat_fitted_dataset(dataset='train_0'):
 
     df.to_csv('./dataset/yahoo_r2_zscored/{}.csv'.format(dataset))
 
+
+def item_similarity_matrix(path='./dataset/song-attributes.txt'):
+    """
+    this code calculate and save item similarity matrix using jaccard similarity
+    """
+    ct = load_content_info(path=path)
+    item_list = list(ct.index)
+    sim = np.zeros((len(item_list), len(item_list)))
+    for i in range(len(item_list)):
+        f1 = list(ct.loc[i])
+        sim[i][i] = 1
+        for j in range(i+1, len(item_list)):
+            f2 = list(ct.loc[j])
+            sim[i][j] = jaccard_similarity_score(f1, f2)
+    np.save('./raw_feature/item_jaccard_sim.npy', sim)
+    
 # this is the main part
 # choose to save info or fitted data
 dataset = './dataset/yahoo_r2/train_0.txt'
 
-df = load_dataset(dataset)
+#df = load_dataset(dataset)
 
 # get_user_info(df, dataset='train_0', user=None)
 
@@ -169,4 +191,6 @@ df = load_dataset(dataset)
 
 # fix_fitted_dataset(df, dataset='train_0')
 
-concat_fitted_dataset(dataset='train_0')
+#concat_fitted_dataset(dataset='train_0')
+
+item_similarity_matrix(path='./dataset/song-attributes.txt')

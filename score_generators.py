@@ -9,13 +9,13 @@ you can also run this code to save scores for future use
 to run this code, you need to provide k range, user list, and similarity functions
 
 """
-import os, time
+import os
 import pandas as pd
+from numpy import load
 from scipy.stats import pearsonr, kendalltau
 from scipy.spatial.distance import euclidean, cosine, correlation
 from sklearn.metrics import jaccard_similarity_score
 from load_data import *
-from tqdm import tqdm
 
 
 def sort_dict_by_value(d, reverse=False):
@@ -34,7 +34,7 @@ def get_similarity(feature_vector, function='correlation'):
 
     sim_dict = {}
     rank = []
-    for nb, vector in tqdm(feature_vector.items()):
+    for nb, vector in feature_vector.items():
         u_vector = vector[0]
         nb_vector = vector[1]
 
@@ -52,7 +52,6 @@ def get_similarity(feature_vector, function='correlation'):
 
         elif function == 'euclidean': # it is actually reverse euclidean
             sim_dict[nb] = 1/euclidean(u_vector, nb_vector)
-        time.sleep(0.1)
         
     sim_tup = sort_dict_by_value(sim_dict, reverse=True)
     for tup in sim_tup:
@@ -81,7 +80,7 @@ def get_user_CF_weights(nearest_nb, initial_nb, sim_dict, user_song_list,
     '''
     song_candidates = {}
 
-    for nb in tqdm(nearest_nb):
+    for nb in nearest_nb:
         song_list = initial_nb[nb][0]
         rating_list = initial_nb[nb][1]
         
@@ -103,8 +102,6 @@ def get_user_CF_weights(nearest_nb, initial_nb, sim_dict, user_song_list,
             else:
                 song_candidates[song_list[j]] = rating_list[j] * sim_dict[nb]
 
-        time.sleep(0.1)
-
     song_candidate_list = list(song_candidates.keys())
 
     if sort:
@@ -114,7 +111,7 @@ def get_user_CF_weights(nearest_nb, initial_nb, sim_dict, user_song_list,
         return song_candidates, song_candidate_list
 
 
-def get_content_weights(song_candidate_list, user_song_list, ct):
+def get_content_weights(song_candidate_list, user_song_list, sim):
     """
     song_candidate_list is the union of songs for all nearest neighbors
     [song_id, song_id, ...]
@@ -136,14 +133,11 @@ def get_content_weights(song_candidate_list, user_song_list, ct):
     """
 
     song_rank_CT = {}
-    for song in tqdm(song_candidate_list):
-        f1 = list(ct.loc[song])
-        sim = 0
+    for song in song_candidate_list:
+        x = 0
         for u_song in user_song_list:
-            f2 = list(ct.loc[u_song])
-            sim += jaccard_similarity_score(f1, f2)
-        song_rank_CT[song] = sim
-        time.sleep(0.1)
+            x += sim[song][u_song]
+        song_rank_CT[song] = x
         
     return song_rank_CT
 
@@ -162,9 +156,8 @@ def get_popularity_weights(song_candidate_list, train=0):
     df.columns = ['song_id', 'popularity']
     df = df.set_index('song_id')
 
-    for song in tqdm(song_candidate_list):
+    for song in song_candidate_list:
         song_rank_pop[song] = df.loc[song]['popularity']
-        time.sleep(0.1)
 
     return song_rank_pop
 
@@ -195,9 +188,9 @@ def main():
     stat.columns = ['user_id', 'mean', 'std']
     stat = stat.set_index('user_id')
     
-    # load content information data for content score
-    print('loading content information.......')
-    ct = load_content_info(path='./dataset/song-attributes.txt')
+    # load item similarity matrix for content score
+    print('loading content similarity matrix.......')
+    sim = load('./raw_feature/item_jaccard_sim.npy')
     
     for user in user_list:
         
@@ -244,7 +237,7 @@ def main():
             
                 print('user {}, {} similarity, k = {} || calculating content scores.......'\
                           .format(user, function, k))
-                song_rank_CT = get_content_weights(song_candidate_list, user_song_list, ct)
+                song_rank_CT = get_content_weights(song_candidate_list, user_song_list, sim)
                 
                 print('user {}, {} similarity, k = {} || saving content scores.......'\
                           .format(user, function, k))
