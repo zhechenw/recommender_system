@@ -203,10 +203,6 @@ def main():
     stat.columns = ['user_id', 'mean', 'std']
     stat = stat.set_index('user_id')
     
-    # load item similarity matrix for content score
-    print('loading content similarity matrix.......')
-    sim = load('./raw_feature/item_jaccard_sim.npy')
-    
     for user in user_list:
         
         print('user {} || loading feature.......'.format(user))
@@ -269,5 +265,5 @@ def main():
                 ucf_df.to_csv(output3)
                 
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+#    main()

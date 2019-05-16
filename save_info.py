@@ -182,19 +182,17 @@ def item_similarity_matrix(path='./dataset/song-attributes.txt'):
     
     
 # this is the main part
-# choose to save info or fitted data
-#dataset = './dataset/yahoo_r2/train_0.txt'
 
-#df = load_dataset(dataset)
+path = './dataset/train_0.txt'
 
-# get_user_info(df, dataset='train_0', user=None)
+df = load_dataset(path)
 
-# get_fitted_dataset(df, dataset='train_0', user=None)
+get_user_info(df, dataset='train_0', user=None)
 
-# get_item_info(df, dataset='train_0')
+get_fitted_dataset(df, dataset='train_0', user=None)
 
-# fix_fitted_dataset(df, dataset='train_0')
+fix_fitted_dataset(df, dataset='train_0')
 
-#concat_fitted_dataset(dataset='train_0')
+concat_fitted_dataset(dataset='train_0')
 
 item_similarity_matrix(path='./dataset/song-attributes.txt')
