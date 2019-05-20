@@ -21,7 +21,7 @@ def load_test(test_path='./dataset/yahoo_r2/test_0.txt'):
 
 
 def load_stat(path='./raw_feature/train_0/new_train_0_user_info.csv'):
-    stat_df = pd.read_csv('./raw_feature/train_0/train_0_user_info.csv', sep=',')
+    stat_df = pd.read_csv(path, sep=',')
     stat_df.columns = ['user_id', 'mean', 'std']
     stat_df = stat_df.set_index('user_id')
     return stat_df
@@ -56,7 +56,7 @@ def get_pred(user, k, test_song_list, train_set=0, function='correlation'):
     
     # load model
     model_path = './models/train_{}/{}/{}/{}_k_{}.csv' \
-        .format(train_set, str(user).zfill(7), function, str(user).zfill(7), k)
+        .format(train_set, function, str(user).zfill(7), str(user).zfill(7), k)
     md = pd.read_csv(model_path, sep=',', names=['song_id', 'score'], 
                      index_col=['song_id'])
     md_song_list = list(md.index)
@@ -158,7 +158,6 @@ def plot_best_k(ame):
     plt.ylabel('Absolute Mean Error')
     plt.show()
     
-    
 
 def load_md(user, train=0, function='correlation', k=6):
     model_path = './models/train_{}/{}/{}/{}_k_{}.csv' \
@@ -185,7 +184,7 @@ def get_recall(user, test_df, md, N):
 def get_recalls(user_list, N_range, k_range, test_df, function='correlation'):
 
     if type(k_range) == int:
-        k_range = list(k_range)
+        k_range = [k_range]
 
     recall = np.zeros((len(k_range), len(N_range)))
     
@@ -195,9 +194,9 @@ def get_recalls(user_list, N_range, k_range, test_df, function='correlation'):
             md = load_md(user, train=0, function=function, k=k)
             for N in N_range:
                 rec.append(get_recall(user, test_df, md, N))
-            recall[k-1] += np.array(rec)
+            recall[k_range.index(k)] += np.array(rec)
 
-        recall[k-1] /= len(user_list)
+        recall[k_range.index(k)] /= len(user_list)
 
     return recall
 
@@ -285,7 +284,16 @@ user_list = list(range(280))
 input_path = './dataset/train_0.txt'
 train_df = load_dataset(input_path)
 test_df = load_test(test_path='./dataset/test_0.txt')
+stat_df = load_stat(path='./raw_feature/new_train_0_user_info.csv')
 item_list = list(set(train_df['song_id']))
 item_num = len(item_list)
 N_range = list(range(100,10000,100))
 
+recalls = get_recalls(user_list, N_range, 6, test_df)
+
+ame = 0
+for user in user_list:
+    true, pred, mean_error = get_ame(user, k, test_df, train_df)
+    ame += mean_error
+ame /= 280
+    
