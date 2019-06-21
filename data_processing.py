@@ -43,10 +43,11 @@ class Users:
             with open('./user_records.json', 'w') as f:
                 json.dump(self.records, f)
     
-    def get_user(self, u_id):
-        return User(u_id, self.records)
     
-
+    def get_user(self, u_id):
+        return User(u_id, self.records)   
+    
+  
 class User:
     def __init__(self, u_id, records):
         self.u_id = u_id
@@ -58,22 +59,34 @@ class User:
         self.rating_std = self.rating.std()
         
         
-#    def get_diversity(self, item_content_df, sim_fn='Jaccard'):
-#        
-#        sim = 0
-#        
-#        if sim_fn == 'Jaccard':
-#            similarity = jaccard_score
-#            
-#        for i in range(self.i_num):
-#            i_id1 = self.i_list[i]
-#            item1 = item(i_id1, item_content_df)
-#            for j in range(i+1, self.i_num):
-#                i_id2 = self.i_list[j]
-#                item2 = item(i_id2, item_content_df)
-#                sim += similarity(item1.contents, item2.contents, average='micro')
-#                    
-#        return sim / (((1 + self.i_num) * self.i_num) / 2)
+    def get_dist(self):
+        dist = []
+        ratings = list(self.record.values())
+        
+        for r in [1,2,3,4,5]:
+            
+            dist.append(ratings.count(r))
+        
+        return dist
+        
+    
+    
+    def get_diversity(self, item_content_df, sim_fn='Jaccard'):
+        
+        sim = 0
+        
+        if sim_fn == 'Jaccard':
+            similarity = jaccard_score
+            
+        for i in range(self.i_num):
+            i_id1 = self.i_list[i]
+            item1 = item(i_id1, item_content_df)
+            for j in range(i+1, self.i_num):
+                i_id2 = self.i_list[j]
+                item2 = item(i_id2, item_content_df)
+                sim += similarity(item1.contents, item2.contents, average='micro')
+                    
+        return sim / (((1 + self.i_num) * self.i_num) / 2)
     
 
     def get_gini_index(self):

@@ -12,6 +12,15 @@ import pandas as pd
 from score_generators import *
 from sklearn.preprocessing import StandardScaler
 
+u_id = 0
+k = 5
+sim_fn = kendalltau
+top_n = 10
+weights = [0.8, 0.1, 0.1]
+
+output = './models/{}_k{}_{}
+
+
 
 
 def load_scores(sim, k, u_id):
