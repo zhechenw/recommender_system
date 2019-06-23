@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from data_processing import *
 from trainer import *
 from tqdm import tqdm
+from sklearn.preprocessing import MinMaxScaler, PowerTransformer
 
 
 test_path = './dataset/test_0.txt'
@@ -21,7 +22,7 @@ contents_path = './dataset/song-attributes.txt'
 train_df = load_dataset(train_path)
 item_content_df = load_item_contents(contents_path)
 test_df = load_dataset(test_path)
-test_df = test_df.set_index('u_id')
+test_df = test_df.set_index(['u_id', 'i_id'])
 
 U = Users(train_df)
 u_list = U.u_list
@@ -145,4 +146,48 @@ def get_coverage(u_ids, k, sim_fn, weights, I, n=None):
     return len(set(r)) / len(I.i_list)
 
 
-
+def get_ken(u_id, k, sim_fn, weights, n=None):
+    r, t = get_result(u_id, k, sim_fn, weights)
+    
+    f1 = []
+    f2 = list(t.values())
+    
+    ir, it = list(r.keys())[:n], list(t.keys())
+    
+    for i in it:
+        if i in ir:
+            f1.append(r[i])
+        else:
+            f1.append(0)
+            
+    return kendalltau(f1, f2)[0]
+    
+    
+def get_mae(u_id, k, sim_fn, weights, U, n=None):
+    r, t = get_result(u_id, k, sim_fn, weights)
+    
+    stand_r =PowerTransformer().fit_transform(np.array(list(r.values())).reshape(-1,1))
+    stand_r =MinMaxScaler().fit_transform(stand_r)
+    
+    f1 = []
+    
+    ir, it = list(r.keys())[:n], list(t.keys())
+    
+    for i in it:
+        if i in ir:
+            f1.append(stand_r[ir.index(i)][0])
+        else:
+            f1.append(stand_r.mean())
+    
+    u = U.get_user(u_id)
+    a, b = min(u.record.values()), max(u.record.values())
+    if u.rating_std != 0:
+        f2 = (np.array(list(t.values())) - u.rating_avg) / u.rating_std
+        a, b = (a - u.rating_avg) / u.rating_std, (b - u.rating_avg) / u.rating_std
+    else:
+        f2 = (np.array(list(t.values())) - U.rating_avg) / U.rating_std
+        a, b = (a - U.rating_avg) / U.rating_std, (b - U.rating_avg) / U.rating_std
+        
+    f2 = (f2 - a) / (b - a)
+    
+    return 5 * abs(f1 - f2).sum() / len(t)
