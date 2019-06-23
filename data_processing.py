@@ -8,6 +8,7 @@ Created on Fri Jun 14 20:04:27 2019
 import json
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 from sklearn.metrics import jaccard_score
 
@@ -68,25 +69,21 @@ class User:
             dist.append(ratings.count(r))
         
         return dist
-        
     
     
-    def get_diversity(self, item_content_df, sim_fn='Jaccard'):
+    def get_diversity(self, item_content_df):
         
         sim = 0
-        
-        if sim_fn == 'Jaccard':
-            similarity = jaccard_score
-            
+
         for i in range(self.i_num):
             i_id1 = self.i_list[i]
             item1 = item(i_id1, item_content_df)
             for j in range(i+1, self.i_num):
                 i_id2 = self.i_list[j]
                 item2 = item(i_id2, item_content_df)
-                sim += similarity(item1.contents, item2.contents, average='micro')
+                sim += jaccard_score(item1.contents, item2.contents, average='micro')
                     
-        return sim / (((1 + self.i_num) * self.i_num) / 2)
+        return 1 - sim / (((self.i_num - 1) * self.i_num) / 2)
     
 
     def get_gini_index(self):
@@ -129,6 +126,27 @@ class Items:
         return sim / (((1 + i_num) * i_num) / 2)
     
     
+    def get_gini(self, plot=True):
+        p_map = dict(sorted(self.pop_map.items(), key=lambda x: x[1]))
+        p = list(p_map.keys())
+
+        if plot:
+            plt.plot(range(len(p)), list(p_map.values()))
+            plt.title('Popularity Distribution', fontsize=12)
+            plt.xlabel('Popularity rank, low to high', fontsize=12)
+            plt.ylabel('Popularity', fontsize=12)
+            plt.show()
+        
+        else:
+            i_list = I.i_list
+            gini = 0
+            n = len(i_list)
+            for i in i_list:
+                gini += (2 * p.index(i) - n - 1) * p_map[i]
+            
+            return gini / (n - 1)
+    
+
 class item:
     def __init__(self, i_id, contents_matrix, pop_map):
         """

@@ -134,14 +134,27 @@ def get_final_score(UCF, CF, POP, weights=None):
         return score
 
 
+def load_scores(u_id, k, sim_fn):
+    
+    score_path = './scores/{}_k{}_{}.npy'.format(sim_fn, k, u_id)
+    return np.load(score_path)
 
 
-
-
-
-
-
-
+def recommender(u_id, k, sim_fn, weights, n=None):
+    
+    if sim_fn not in ['cos', 'ken']:
+        raise ValueError('sim_fn has to be either string cos or ken')
+    
+    try:
+        score = load_scores(u_id, k, sim_fn)
+        i_list = score[0]
+        scores = np.delete(score, 0, 0).T.dot(weights)
+        score_map = {int(k):v for k, v in dict(np.array((i_list, scores)).T).items()}
+        
+        return dict(sorted(score_map.items(), key=lambda x: x[1], reverse=True)[:n])
+        
+    except:
+        raise ValueError('loading scores failed, check score file!') 
 
 
 class Trainer:

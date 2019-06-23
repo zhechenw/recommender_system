@@ -23,14 +23,28 @@ output = './models/{}_k{}_{}
 
 
 
-def load_scores(sim, k, u_id):
-    score_path = './scores/{}_k{}_{}.npy'.format(sim, k, u_id)
+def load_scores(u_id, k, sim_fn):
+    
+    score_path = './scores/{}_k{}_{}.npy'.format(sim_fn, k, u_id)
     return np.load(score_path)
 
 
-def recommender(sim, k, u_id):
+def recommender(u_id, k, sim_fn, weights, n):
     
-    score = load_scores(sim, k, u_id)
-    i_list = score[0]
-    i_score = score[1]
+    try:
+        score = load_scores(u_id, k, sim_fn)
+        i_list = score[0]
+        ucf = score[1]
+        cf = score[2]
+        pop = score[3]
+        scores = np.delete(score, 0, 0).T.dot(weights)
+        score_map = {int(k):v for k, v in dict(np.array((i_list, scores)).T).items()}
+        
+        return sorted(score_map.items(), key=lambda x: x[1], reverse=True)[:n]
+        
+    except:
+        print('loading scores failed, check score file!')    
+    
+    
+    
 
