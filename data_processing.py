@@ -85,10 +85,6 @@ class User:
                     
         return 1 - sim / (((self.i_num - 1) * self.i_num) / 2)
     
-
-    def get_gini_index(self):
-        pass
-   
     
 class Items:
     def __init__(self, item_content_df, train_df):

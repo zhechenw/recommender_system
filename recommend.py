@@ -18,18 +18,19 @@ from sklearn.preprocessing import StandardScaler
 train_path = './dataset/train_0.txt'
 contents_path = './dataset/song-attributes.txt'
 
-
 train_df = load_dataset(train_path)
 item_content_df = load_item_contents(contents_path)
-
 U = Users(train_df)
-u_list = U.u_list
 I = Items(item_content_df, train_df)
+
+similarity_functions = [kendalltau, cosine]
+k_range = range(1, 10)
+u_list = U.u_list[:5]
 
 
 for u_id in u_list:
-    for k in range(5, 55, 5):
-        for sim_fn in [kendalltau, cosine]:
+    for k in k_range:
+        for sim_fn in similarity_functions:
             if sim_fn == kendalltau:
                 sim = 'ken'
             else:
